@@ -1,0 +1,267 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#030d08" />
+  <meta name="description" content="QRShield checks QR codes, links and UPI payment requests against live threat intelligence before you open or pay." />
+  <title>QRShield — Scan before you trust</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M16 2 4 6v9c0 7.5 5.1 13.2 12 15 6.9-1.8 12-7.5 12-15V6z' fill='%23c4ff3d'/%3E%3Cpath d='M11 11h4v4h-4zm6 0h4v4h-4zm-6 6h4v4h-4zm7 1h2v2h-2z' fill='%23030d08'/%3E%3C/svg%3E" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <div class="bg-layer" aria-hidden="true"><div class="bg-grid"></div><div class="bg-glow g1"></div><div class="bg-glow g2"></div></div>
+  <div class="noise" aria-hidden="true"></div>
+
+  <header class="topbar">
+    <a class="brand" href="#/scan" aria-label="QRShield home">
+      <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true"><path d="M16 2 4 6v9c0 7.5 5.1 13.2 12 15 6.9-1.8 12-7.5 12-15V6z" /><path class="cut" d="M11 11h4v4h-4zm6 0h4v4h-4zm-6 6h4v4h-4zm7 1h2v2h-2z" /></svg>
+      <span class="brand-name">QR<b>Shield</b></span>
+    </a>
+    <nav class="nav" aria-label="Main">
+      <a href="#/scan" data-route="scan">Scan</a>
+      <a href="#/history" data-route="history">History</a>
+      <a href="#/report" data-route="report">Report</a>
+      <a href="#/about" data-route="about">How it works</a>
+    </nav>
+    <button class="intel-pill" id="intelPill" type="button" title="Threat-intelligence status" data-go="#/about">
+      <span class="dot"></span><span class="label">Connecting…</span>
+    </button>
+  </header>
+
+  <main id="app">
+    <!-- ============ SCAN ============ -->
+    <section class="view" id="view-scan" data-view="scan">
+      <div class="hero">
+        <p class="eyebrow"><span class="blink"></span> Live threat-intelligence QR analysis</p>
+        <h1>Scan before<br /><em>you trust.</em></h1>
+        <p class="lede">Decode any QR code, trace where it really leads and check it against phishing &amp; malware intelligence — including UPI payment fraud patterns.</p>
+      </div>
+
+      <div class="scan-grid">
+        <div class="card scanner-card">
+          <div class="tabs" role="tablist" aria-label="Scan method">
+            <button role="tab" class="tab active" id="tab-camera" aria-selected="true" aria-controls="panel-camera" data-tab="camera">
+              <svg viewBox="0 0 24 24"><path d="M4 8h3l2-3h6l2 3h3v11H4z" /><circle cx="12" cy="13" r="3.5" /></svg>Camera
+            </button>
+            <button role="tab" class="tab" id="tab-upload" aria-selected="false" aria-controls="panel-upload" data-tab="upload">
+              <svg viewBox="0 0 24 24"><path d="M12 16V4m0 0-4 4m4-4 4 4M4 15v5h16v-5" /></svg>Upload image
+            </button>
+            <button role="tab" class="tab" id="tab-manual" aria-selected="false" aria-controls="panel-manual" data-tab="manual">
+              <svg viewBox="0 0 24 24"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1" /></svg>Check link
+            </button>
+            <span class="tab-ink" aria-hidden="true"></span>
+          </div>
+
+          <!-- Camera -->
+          <div class="panel active" id="panel-camera" role="tabpanel" aria-labelledby="tab-camera">
+            <div class="viewfinder" id="viewfinder">
+              <video id="video" playsinline muted autoplay></video>
+              <div class="vf-idle" id="vfIdle">
+                <div class="vf-icon"><svg viewBox="0 0 48 48"><path d="M6 16V6h10M32 6h10v10M42 32v10H32M16 42H6V32" /><path d="M16 16h6v6h-6zM26 16h6v6h-6zM16 26h6v6h-6zM27 27h4v4h-4z" /></svg></div>
+                <p>Point your camera at a QR code</p>
+                <button class="btn btn-primary" id="camStart" type="button">
+                  <svg viewBox="0 0 24 24"><path d="M4 8h3l2-3h6l2 3h3v11H4z" /><circle cx="12" cy="13" r="3.5" /></svg>Start camera
+                </button>
+                <small class="muted">Your camera feed stays on your device. Only the decoded text is checked.</small>
+              </div>
+              <div class="vf-frame" aria-hidden="true"><i></i><i></i><i></i><i></i><span class="laser"></span></div>
+              <div class="vf-flash" id="vfFlash" aria-hidden="true"></div>
+            </div>
+            <div class="cam-controls" id="camControls" hidden>
+              <button class="btn btn-ghost" id="camStop" type="button"><svg viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="2" /></svg>Stop</button>
+              <button class="btn btn-ghost" id="camSwitch" type="button" hidden><svg viewBox="0 0 24 24"><path d="M4 12a8 8 0 0 1 14-5.3M20 12a8 8 0 0 1-14 5.3M18 3v4h-4M6 21v-4h4" /></svg>Switch camera</button>
+              <button class="btn btn-ghost" id="camTorch" type="button" hidden aria-pressed="false"><svg viewBox="0 0 24 24"><path d="M9 2h6l-1 7h-4zM10 9h4v13h-4z" /></svg>Torch</button>
+              <span class="cam-status" id="camStatus" aria-live="polite">Searching for QR code…</span>
+            </div>
+            <div class="alert" id="camError" role="alert" hidden></div>
+          </div>
+
+          <!-- Upload -->
+          <div class="panel" id="panel-upload" role="tabpanel" aria-labelledby="tab-upload" hidden>
+            <label class="dropzone" id="dropzone" for="fileInput" tabindex="0">
+              <input type="file" id="fileInput" accept="image/*" hidden />
+              <div class="dz-inner" id="dzInner">
+                <div class="vf-icon"><svg viewBox="0 0 24 24"><path d="M12 16V4m0 0-4 4m4-4 4 4M4 15v5h16v-5" /></svg></div>
+                <p><b>Drop a QR image</b>, tap to choose, or paste a screenshot</p>
+                <small class="muted">PNG, JPG, WEBP, GIF · screenshots and photos work</small>
+              </div>
+              <img id="uploadPreview" alt="Uploaded QR image preview" hidden />
+            </label>
+            <div class="alert" id="uploadError" role="alert" hidden></div>
+          </div>
+
+          <!-- Manual -->
+          <div class="panel" id="panel-manual" role="tabpanel" aria-labelledby="tab-manual" hidden>
+            <form id="manualForm" class="manual-form" novalidate>
+              <label for="manualInput">Paste a link, UPI payment string or any QR text</label>
+              <textarea id="manualInput" rows="3" maxlength="4096" placeholder="https://example.com/login   ·   upi://pay?pa=name@bank&amp;pn=Shop   ·   example.com" spellcheck="false" autocomplete="off"></textarea>
+              <div class="manual-row">
+                <span class="muted small" id="manualCount">0 / 4096</span>
+                <button class="btn btn-primary" type="submit" id="manualSubmit"><svg viewBox="0 0 24 24"><path d="M12 3 4 6v6c0 4.4 3.4 8.3 8 9 4.6-.7 8-4.6 8-9V6z" /><path d="m9 12 2 2 4-4" /></svg>Check security</button>
+              </div>
+              <div class="alert" id="manualError" role="alert" hidden></div>
+            </form>
+          </div>
+        </div>
+
+        <div class="card result-card" id="resultCard" aria-live="polite">
+          <div class="empty-state" id="resultEmpty">
+            <div class="radar" aria-hidden="true"><span></span><span></span><span></span></div>
+            <h3>Awaiting a QR code</h3>
+            <p class="muted">Scan with your camera, upload an image or paste a link. You'll see the decoded content instantly, followed by a verified risk verdict.</p>
+            <ul class="legend">
+              <li><b class="v-SAFE">SAFE</b> verified clean</li>
+              <li><b class="v-SUSPICIOUS">SUSPICIOUS</b> warning signs</li>
+              <li><b class="v-DANGEROUS">DANGEROUS</b> confirmed threat</li>
+              <li><b class="v-UNVERIFIED">UNVERIFIED</b> check incomplete</li>
+            </ul>
+          </div>
+          <div id="resultBody" hidden></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ HISTORY ============ -->
+    <section class="view" id="view-history" data-view="history" hidden>
+      <div class="page-head">
+        <div>
+          <p class="eyebrow">Scan log</p>
+          <h2>History</h2>
+          <p class="muted">Every scan is stored with date, time, verdict and risk score.</p>
+        </div>
+        <div class="head-actions">
+          <button class="btn btn-ghost" id="exportCsv" type="button"><svg viewBox="0 0 24 24"><path d="M12 4v11m0 0-4-4m4 4 4-4M4 19h16" /></svg>CSV</button>
+          <button class="btn btn-primary" id="historyPdf" type="button"><svg viewBox="0 0 24 24"><path d="M6 2h9l5 5v15H6z" /><path d="M14 2v6h6M9 14h6M9 18h6" /></svg>History report (PDF)</button>
+          <button class="btn btn-danger-ghost" id="clearHistory" type="button"><svg viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3m-8 0 1 13h8l1-13" /></svg>Clear</button>
+        </div>
+      </div>
+
+      <div class="stats" id="stats">
+        <button class="stat" data-filter="" type="button"><span class="n" data-stat="total">–</span><span class="l">Total scans</span></button>
+        <button class="stat s-SAFE" data-filter="SAFE" type="button"><span class="n" data-stat="SAFE">–</span><span class="l">Safe</span></button>
+        <button class="stat s-SUSPICIOUS" data-filter="SUSPICIOUS" type="button"><span class="n" data-stat="SUSPICIOUS">–</span><span class="l">Suspicious</span></button>
+        <button class="stat s-DANGEROUS" data-filter="DANGEROUS" type="button"><span class="n" data-stat="DANGEROUS">–</span><span class="l">Dangerous</span></button>
+        <button class="stat s-UNVERIFIED" data-filter="UNVERIFIED" type="button"><span class="n" data-stat="UNVERIFIED">–</span><span class="l">Unverified</span></button>
+      </div>
+
+      <div class="toolbar">
+        <div class="search">
+          <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7" /><path d="m20 20-4-4" /></svg>
+          <input type="search" id="historySearch" placeholder="Search links, UPI IDs, text…" aria-label="Search history" />
+        </div>
+        <div class="chips" id="historyFilters" role="group" aria-label="Filter by verdict">
+          <button class="chip active" data-filter="" type="button">All</button>
+          <button class="chip" data-filter="SAFE" type="button">Safe</button>
+          <button class="chip" data-filter="SUSPICIOUS" type="button">Suspicious</button>
+          <button class="chip" data-filter="DANGEROUS" type="button">Dangerous</button>
+          <button class="chip" data-filter="UNVERIFIED" type="button">Unverified</button>
+        </div>
+      </div>
+
+      <div class="history-list" id="historyList"></div>
+      <div class="list-foot"><button class="btn btn-ghost" id="loadMore" type="button" hidden>Load more</button></div>
+    </section>
+
+    <!-- ============ REPORT ============ -->
+    <section class="view" id="view-report" data-view="report" hidden>
+      <div class="page-head">
+        <div>
+          <p class="eyebrow">Security report</p>
+          <h2 id="reportTitle">Report</h2>
+          <p class="muted" id="reportMeta">Detailed analysis of a single scan.</p>
+        </div>
+        <div class="head-actions" id="reportActions" hidden>
+          <button class="btn btn-ghost" id="reportBack" type="button"><svg viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6" /></svg>History</button>
+          <button class="btn btn-ghost" id="reportPrint" type="button"><svg viewBox="0 0 24 24"><path d="M7 9V3h10v6M7 17H4v-7h16v7h-3M7 14h10v7H7z" /></svg>Print</button>
+          <button class="btn btn-primary" id="reportPdf" type="button"><svg viewBox="0 0 24 24"><path d="M12 4v11m0 0-4-4m4 4 4-4M4 19h16" /></svg>Download PDF</button>
+        </div>
+      </div>
+      <div id="reportBody"></div>
+    </section>
+
+    <!-- ============ ABOUT ============ -->
+    <section class="view" id="view-about" data-view="about" hidden>
+      <div class="page-head">
+        <div>
+          <p class="eyebrow">Methodology</p>
+          <h2>How QRShield decides</h2>
+          <p class="muted">No default verdicts. Every result comes from real checks run when you scan.</p>
+        </div>
+      </div>
+      <div class="about-grid">
+        <div class="card">
+          <h3>1 · Decode</h3>
+          <p class="muted">QR codes are decoded on your device (native BarcodeDetector where available, jsQR otherwise). The decoded text appears instantly.</p>
+        </div>
+        <div class="card">
+          <h3>2 · Trace</h3>
+          <p class="muted">Links are followed server-side through every HTTP, meta-refresh and script redirect to reveal the real destination — without exposing your device.</p>
+        </div>
+        <div class="card">
+          <h3>3 · Check intelligence</h3>
+          <p class="muted">Every URL in the chain is checked against live threat intelligence, plus domain registration age (RDAP).</p>
+        </div>
+        <div class="card">
+          <h3>4 · Analyse patterns</h3>
+          <p class="muted">Brand impersonation, typosquatting, look-alike characters, APK downloads, USSD codes and UPI scam patterns raise the risk score.</p>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Threat-intelligence sources</h3>
+        <div class="sources" id="sourcesList"><div class="skeleton" style="height:64px"></div></div>
+      </div>
+
+      <div class="card verdict-table">
+        <h3>Verdicts</h3>
+        <div class="vt-row"><b class="v-DANGEROUS">DANGEROUS</b><span>A threat-intelligence source lists the link (or a redirect destination) as phishing/malware, or the QR contains executable script code.</span></div>
+        <div class="vt-row"><b class="v-SUSPICIOUS">SUSPICIOUS</b><span>Risk score of 30+ from warning signs such as brand impersonation, brand-new domains, APK downloads or UPI scam wording. Every reason is listed.</span></div>
+        <div class="vt-row"><b class="v-SAFE">SAFE</b><span>Shown only after threat intelligence answered successfully and no significant warning signs were found.</span></div>
+        <div class="vt-row"><b class="v-UNVERIFIED">UNVERIFIED</b><span>The security check could not be completed (backend or intelligence services unreachable, destination unreachable, or content that can't be verified).</span></div>
+      </div>
+
+      <div class="card">
+        <h3>UPI payment safety</h3>
+        <ul class="tips">
+          <li>Scanning a UPI QR and entering your PIN <b>always sends money</b>. You never need to scan to <em>receive</em> a refund, cashback or prize.</li>
+          <li>Always match the payee name shown by your UPI app with who you intend to pay.</li>
+          <li>Banks, KYC desks and customer care never ask you to pay via QR.</li>
+          <li>Report fraud at <b>cybercrime.gov.in</b> or call <b>1930</b> (India).</li>
+        </ul>
+      </div>
+    </section>
+  </main>
+
+  <nav class="bottom-nav" aria-label="Main mobile">
+    <a href="#/scan" data-route="scan"><svg viewBox="0 0 24 24"><path d="M4 8V4h4M16 4h4v4M20 16v4h-4M8 20H4v-4M8 8h3v3H8zM13 8h3v3h-3zM8 13h3v3H8zm6 1h2v2h-2z" /></svg>Scan</a>
+    <a href="#/history" data-route="history"><svg viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 0 2.3-5.7M4 4v4h4M12 8v4l3 2" /></svg>History</a>
+    <a href="#/report" data-route="report"><svg viewBox="0 0 24 24"><path d="M6 2h9l5 5v15H6z" /><path d="M14 2v6h6M9 14h6M9 18h4" /></svg>Report</a>
+    <a href="#/about" data-route="about"><svg viewBox="0 0 24 24"><path d="M12 3 4 6v6c0 4.4 3.4 8.3 8 9 4.6-.7 8-4.6 8-9V6z" /><path d="M12 11v5M12 8h.01" /></svg>About</a>
+  </nav>
+
+  <div class="toast-wrap" id="toasts" aria-live="polite"></div>
+
+  <dialog class="modal" id="confirmModal">
+    <form method="dialog">
+      <h3 id="confirmTitle">Are you sure?</h3>
+      <p id="confirmText" class="muted"></p>
+      <div class="modal-actions">
+        <button class="btn btn-ghost" value="cancel" type="submit">Cancel</button>
+        <button class="btn btn-primary" value="ok" type="submit" id="confirmOk">Continue</button>
+      </div>
+    </form>
+  </dialog>
+
+  <footer class="footer">
+    <span>QRShield · Live threat-intelligence QR scanner</span>
+    <span class="muted">Stay alert: no scanner can guarantee a QR code is harmless.</span>
+  </footer>
+
+  <script src="vendor/jsQR.js"></script>
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
